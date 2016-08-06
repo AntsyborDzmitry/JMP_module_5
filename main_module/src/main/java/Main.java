@@ -28,7 +28,8 @@ public class Main {
         System.out.println("|   [2]    - load class from test_classLoading_module_2.jar |");
         System.out.println(" ----------------------------------------------------------- ");
         System.out.println();
-        System.out.println("choose option -> ");
+        System.out.println("choose option ... ");
+        System.out.println();
 
         String line = sc.nextLine();
 
@@ -40,10 +41,10 @@ public class Main {
 
         switch (option){
             case "1":
-                loadFirstClass();
+                loadMyClass("test_classLoading_module_1.jar","TestClass_1");
                 return true;
             case "2":
-                loadSecondClass();
+                loadMyClass("test_classLoading_module_2.jar","TestClass_2");
                 return true;
             default:
                 System.out.println("wrong option data, try again ... ");
@@ -51,34 +52,30 @@ public class Main {
         }
     }
 
-    private static void loadFirstClass(){
+    private static void loadMyClass(String path, String name){
+
         try {
+            MyCustomClassLoader loader = new MyCustomClassLoader(path);
 
-            URLClassLoader loader = URLClassLoader.newInstance(new URL[]{new URL("file:/c://test_classLoading_module_1.jar")});
-            Class cls = loader.loadClass("TestClass_1");
-            callMain(cls);
+            //case1 -> load from  MyCustomClassLoader
+            Class cls = loader.loadClass(name);
 
-        } catch (MalformedURLException | ClassNotFoundException  e) {
-           e.printStackTrace();
-        }
-    }
-    private static void loadSecondClass(){
-            try {
+            Test test = (Test)cls.newInstance();
+            test.sayHello();
 
-                URLClassLoader loader = URLClassLoader.newInstance(new URL[]{new URL("file:/c://test_classLoading_module_2.jar")});
-                Class cls = loader.loadClass("TestClass_2");
-                callMain(cls);
+            //case2 -> load from  MyCustomClassLoader cache (use unique principle)
+            /*
+                Class cls1 = loader.loadClass(name);
+                Test test1 = (Test)cls.newInstance();
+                test1.sayHello();
+            */
 
-            } catch (MalformedURLException | ClassNotFoundException  e) {
-               e.printStackTrace();
-            }
-        }
-    private static void callMain (Class cls){
-        try{
-            Method method = cls.getMethod("main", String[].class);
-            String[]params = new String[2];
-            method.invoke(null, (Object) params);
-        }catch ( NoSuchMethodException | IllegalAccessException | InvocationTargetException e) {
+            //case3 -> load native class (use delegation principle)
+            /*
+                Class cls2 = loader.loadClass("java.lang.String");
+            */
+
+        } catch (ClassNotFoundException | InstantiationException | IllegalAccessException e) {
            e.printStackTrace();
         }
     }
