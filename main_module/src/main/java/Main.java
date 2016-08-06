@@ -1,23 +1,22 @@
-import java.lang.reflect.InvocationTargetException;
-import java.lang.reflect.Method;
-import java.net.MalformedURLException;
-import java.net.URL;
-import java.net.URLClassLoader;
+import org.apache.log4j.Logger;
 import java.util.Scanner;
 
-/**
- */
-
 public class Main {
-    public static void main(String[] args) {
-        Scanner sc = new Scanner(System.in);
 
+    private static final Logger log = Logger.getLogger(Main.class);
+
+    public static void main(String[] args) {
+
+        log.info(" Start ");
+        Scanner sc = new Scanner(System.in);
         String line = callMenu(sc);
+
         while(!loadClass(line)){
             line = callMenu(sc);
         };
 
         sc.close();
+        log.info(" End ");
     }
 
     private static String callMenu (Scanner sc){
@@ -31,10 +30,7 @@ public class Main {
         System.out.println("choose option ... ");
         System.out.println();
 
-        String line = sc.nextLine();
-
-
-        return  line;
+        return sc.nextLine();
     }
 
     private static boolean loadClass(String option){
@@ -59,24 +55,28 @@ public class Main {
 
             //case1 -> load from  MyCustomClassLoader
             Class cls = loader.loadClass(name);
+            if (cls != null){
+                Test test = (Test)cls.newInstance();
+                test.sayHello();
+            }
 
-            Test test = (Test)cls.newInstance();
-            test.sayHello();
 
             //case2 -> load from  MyCustomClassLoader cache (use unique principle)
-            /*
-                Class cls1 = loader.loadClass(name);
-                Test test1 = (Test)cls.newInstance();
-                test1.sayHello();
-            */
+
+                /*Class cls1 = loader.loadClass(name);
+                if (cls != null){
+                    Test test1 = (Test)cls.newInstance();
+                    test1.sayHello();
+                }*/
+
 
             //case3 -> load native class (use delegation principle)
             /*
                 Class cls2 = loader.loadClass("java.lang.String");
             */
 
-        } catch (ClassNotFoundException | InstantiationException | IllegalAccessException e) {
-           e.printStackTrace();
+        } catch (InstantiationException | IllegalAccessException e) {
+            log.error(e.getMessage());
         }
     }
 }

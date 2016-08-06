@@ -1,3 +1,5 @@
+import org.apache.log4j.Logger;
+
 import java.net.MalformedURLException;
 import java.net.URL;
 import java.net.URLClassLoader;
@@ -10,6 +12,8 @@ public class MyCustomClassLoader extends ClassLoader {
     private  static final String PROTOCOL = "file:/";
     private  String packageName = "";
     private Map LoadedClasses = new HashMap<String, Class<?>>();
+
+    private static final Logger log = Logger.getLogger(MyCustomClassLoader.class);
 
     public MyCustomClassLoader(ClassLoader parent) {
         super(parent);
@@ -24,40 +28,47 @@ public class MyCustomClassLoader extends ClassLoader {
         this.packageName = packageName;
     }
 
-    public synchronized Class loadClass(String name) throws ClassNotFoundException {
+    public synchronized Class loadClass(String name) {
 
         //check local cache
         Class result = (Class<?>)LoadedClasses.get(name);
 
         if (result != null) {
-            System.out.println("% Class "+name+" found in cache");
+            log.info("Class " + name + " found in cache");
             return result;
         }
 
-        //if cache is empty - ask parent
+
         if(result == null){
+
+            //if cache is empty - ask parent
             try {
                 result = super.loadClass(name, false);
+                log.info("Class " + name + " was returned from parent class loader " + result.getClassLoader().getClass().getName());
             } catch (ClassNotFoundException e) {
 
-                //if still is empty - try to load manually
                 if(result == null){
-                    URLClassLoader loader = null;
 
+                    //if still is empty - try to load manually
+                    URLClassLoader loader = null;
                     try {
 
                         loader = URLClassLoader.newInstance(new URL[]{new URL(PROTOCOL + PATH + packageName)});
+                        result = loader.loadClass(name);
 
-                    } catch (MalformedURLException e1) {
+                        if(result != null){
+                           saveToCache (result);
+                           log.info("Class "+name+" was loaded  manually  by " + result.getClassLoader().getClass().getName());
+                        }
+                    } catch (MalformedURLException | ClassNotFoundException e1) {
 
-                        e1.printStackTrace();
-                        throw new ClassNotFoundException();
+                        log.error("Class [" + name + "] and package [" + packageName + "] wasn't found");
                     }
-
-                    result = loader.loadClass(name);
-                    saveToCache (result);
                 }
             }
+        }
+        if(result == null){
+            log.error("Class [" + name + "] and package [" + packageName + "] wasn't found");
         }
 
         return result;
